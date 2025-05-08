@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vintage Typewriter Typo Challenge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+  <style>
+     body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #faf4e0;
+      font-family: 'Special Elite', cursive;
+      background-image: url('https://www.zazzle.com/old_vintage_paper_texture_background_scrapbook-256871173589528600');
+      background-size: cover;
+      margin: 0;
+      padding: 1rem;
+    }
+    body.dark-theme { background-color: #2b2b2b; color: #eee; background-image: none; }
+    button, input, select, textarea { font-family: 'Special Elite', cursive; }
+    #loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.8); display:flex; align-items:center; justify-content:center; z-index:1000; }
+    .spinner { border:8px solid #f3f3f3; border-top:8px solid #333; border-radius:50%; width:60px; height:60px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0%{transform:rotate(0);}100%{transform:rotate(360deg);} }
+    .container { width:100%; padding:0; margin:0; }
+    h1 { font-size:4rem; margin:1rem 0; text-align:center; }
+    .typewriter { background:rgba(0,0,0,0.8); border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.3); overflow:hidden; margin-bottom:2rem; position:relative; transition:background 0.3s; }
+    body.dark-theme .typewriter { background:rgba(255,255,255,0.1); }
+    .typewriter::before { content:""; position:absolute; top:0; left:0; right:0; height:40px; background:linear-gradient(to right,#555,#777,#555); border-radius:10px 10px 0 0; }
+    .paper { background:#fff8c4; background-image:url('https://www.zazzle.com/old_vintage_paper_texture_background_scrapbook-256871173589528600'); background-size:cover;
+      border:1px solid #ccc; box-shadow:inset 0 0 10px rgba(0,0,0,0.1); padding:30px; font-size:30px; line-height:1.8; min-height:200px; position:relative; transition:background 0.3s, color 0.3s;
+    }
+    
+    body.dark-theme .paper { background:#444; background-image:none; color:#eee; }
+    .paper::before { content:""; position:absolute; top:0; left:40px; width:2px; height:100%; background:rgba(200,0,0,0.2); }
+    .keyboard { background:#555; padding:15px; border-radius:0 0 10px 10px; text-align:center; transition:background 0.3s; }
+    body.dark-theme .keyboard { background:#222; }
+    .key { background:#e0d9c0; color:#333; border-radius:5px; padding:12px 20px; margin:5px; box-shadow:0 4px 0 #b0a789; cursor:pointer; font-size:1rem; font-weight:bold; transition:all .1s; }
+    .key:hover { background:#d4c7a0; }
+    .key:active { transform:translateY(2px); box-shadow:0 2px 0 #b0a789; }
+    body.dark-theme .key { background:#666; color:#fff; box-shadow:0 4px 0 #444; }
+    .cursor { display:inline-block; width:2px; height:24px; background:#333; animation:blink 1s infinite; vertical-align:middle; }
+    @keyframes blink { 0%,100%{opacity:1;}50%{opacity:0;} }
+    #badge-area { margin:20px 0; padding:10px; background:rgba(255,255,200,0.8); border:2px dashed #b89845; border-radius:8px; font-size:1.4rem; text-align:center; transition:background 0.3s, color 0.3s; }
+    body.dark-theme #badge-area { background:rgba(80,80,80,0.8); border-color:#888; color:#eee; }
+    #timer { font-size:1.4rem; margin-bottom:1rem; color:#333; }
+    body.dark-theme #timer { color:#ddd; }
+    .highlight { background:#ffe87f; padding:0 2px; }
+    .correct { color:#2e7d32; font-weight:bold; }
+    .incorrect { color:#b71c1c; text-decoration:underline; }
+    #pause-btn { margin-left:10px; }
+    #restart-btn { margin-top:1rem; }
+    .level-indicator { font-size:1.4rem; margin-bottom:1rem; color:#333; }
+    body.dark-theme .level-indicator { color:#ddd; }
+    /* Balloon animation */
+    #balloon-container { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:hidden; z-index:2000; }
+    .balloon { position:absolute; bottom:-50px; width:40px; height:60px; background:radial-gradient(circle at 50% 35%, #ff5e5e, #d43f3f); border-radius:50% 50% 45% 45%; opacity:0.8; animation: floatUp 3s ease-out forwards; }
+    @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity:1; } 100% { transform: translateY(-120vh) scale(1.2); opacity:0; } }
+  </style>
+</head>
+<body>
+  <div id="loading-overlay"><div class="spinner"></div></div>
+  <div id="balloon-container"></div>
+  <div class="container">
+    <h1>Vintage Typewriter Typo Challenge</h1>
+    <div id="badge-area">Welcome, typo-warrior!</div>
+    <div id="timer">Time: 0s</div>
+    <div class="level-indicator">Level: <span id="level-display">1</span></div>
+    <div class="typewriter">
+      <div class="paper" id="typing-area"></div>
+      <div class="keyboard">
+        <button class="key" id="start-btn"><i class="fas fa-play"></i> Start</button>
+        <button class="key" id="pause-btn"><i class="fas fa-pause"></i> Pause</button>
+        <button class="key" id="hint-btn"><i class="fas fa-lightbulb"></i> Hint</button>
+        <button class="key" id="theme-btn"><i class="fas fa-adjust"></i> Theme</button>
+        <button class="key" id="check-btn"><i class="fas fa-check"></i> Check</button>
+        <button class="key" id="next-btn"><i class="fas fa-forward"></i> Next Level</button>
+        <button class="key" id="restart-btn"><i class="fas fa-redo"></i> Restart</button>
+      </div>
+    </div>
+    <div class="flex justify-between mb-4 text-center">
+      <div>Errors: <span id="found-errors">0</span>/<span id="total-errors">0</span></div>
+      <div>Score: <span id="score">0</span></div>
+      <div>Accuracy: <span id="accuracy">0</span>%</div>
+    </div>
+  </div>
+  <audio id="tickSound" src="https://www.soundjay.com/misc/sounds/clock-ticking-1.mp3" preload="auto"></audio>
+  <audio id="keySound" src="https://www.soundjay.com/mechanical/sounds/typewriter-1.mp3" preload="auto"></audio>
+  <audio id="bellSound" src="https://www.soundjay.com/mechanical/sounds/typewriter-bell-1.mp3" preload="auto"></audio>
+  <script>
+    const tickSound = document.getElementById('tickSound');
+    const keySound = document.getElementById('keySound');
+    const bellSound = document.getElementById('bellSound');
+    tickSound.volume = 0.3; keySound.volume = 0.5; bellSound.volume = 0.5;
+    let playerName = prompt("🔤 What's your name, typo-warrior?", "") || "Wordsmith";
+    const gameData = { english: [] };
+    let currentLevel = 0, foundErrors = [], totalErrors = 0, score = 0, totalScore = 0;
+    let timerInterval, elapsedTime = 0, isLevelComplete = false, isPaused = false;
+    const fallbackTexts = [
+      "Once upon a time there was a curious kitten who loved adventures in the forest...",
+      "Deep beneath the ocean lived a tiny fish who dreamed of flying among the clouds...",
+      "High on the tallest mountain lived a friendly dragon who collected stories instead of gold..."
+    ];
+    function makeTypos(text, count) {
+      const words = text.split(/(\s+)/), errors = [];
+      let attempts = 0;
+      for (let t = 0; t < count && attempts < 100; t++) {
+        attempts++;
+        let idx = Math.floor(Math.random() * words.length), orig = words[idx];
+        if (!orig.trim() || orig.length < 3) { t--; continue; }
+        let p = Math.floor(Math.random() * (orig.length - 1)), arr = orig.split("");
+        [arr[p], arr[p+1]] = [arr[p+1], arr[p]];
+        let typo = arr.join(""); let pos = 0; for (let j = 0; j < idx; j++) pos += words[j].length;
+        errors.push({ original: typo, corrected: orig, position: pos }); words[idx] = typo;
+      }
+      return { text: words.join(''), errors };
+    }
+    async function fetchDynamicTexts() {
+      document.getElementById('loading-overlay').style.display = 'flex';
+      try {
+        const resp = await fetch("https://gutendex.com/books?topic=children&mime_type=text/plain");
+        const json = await resp.json(); const books = json.results.slice(0,3);
+        for (const b of books) {
+          try {
+            const url = b.formats['text/plain; charset=utf-8']||b.formats['text/plain; charset=us-ascii'];
+            if (!url) continue;
+            const proxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+            const res = await fetch(proxy); if (!res.ok) throw new Error(res.status);
+            const full = await res.text(); let start = full.search(/chapter\s+\w+/i); if (start<0) start=full.search(/\n\n/);
+            const snippet=(start>=0?full.slice(start):full).slice(0,500)+"...";
+            gameData.english.push(makeTypos(snippet,5));
+          } catch(e) { console.error(e); }
+        }
+      } catch(e){ console.error(e); } finally {
+        if(!gameData.english.length) fallbackTexts.forEach(t=>gameData.english.push(makeTypos(t,5)));
+        document.getElementById('loading-overlay').style.display='none';
+      }
+    }
+    function startTimer() { clearInterval(timerInterval); elapsedTime=0; isPaused=false; document.getElementById('timer').textContent=`Time: ${elapsedTime}s`; tickSound.play().catch(()=>{}); timerInterval=setInterval(() => { if(!isPaused) { elapsedTime++; document.getElementById('timer').textContent=`Time: ${elapsedTime}s`; } },1000); }
+    function stopTimer() { clearInterval(timerInterval); tickSound.pause(); tickSound.currentTime=0; }
+    function launchBalloons() {
+      const container = document.getElementById('balloon-container');
+      for (let i = 0; i < 5; i++) {
+        const balloon = document.createElement('div');
+        balloon.className = 'balloon';
+        balloon.style.left = Math.random() * 90 + 'vw';
+        balloon.style.background = `hsl(${Math.random()*60+330}, 70%, 60%)`;
+        container.appendChild(balloon);
+        balloon.addEventListener('animationend', () => balloon.remove());
+      }
+    }
+    function loadLevel() { isLevelComplete=false; document.getElementById('level-display').textContent=currentLevel+1; const lvl=gameData.english[currentLevel]; totalErrors=lvl.errors.length; foundErrors=[]; document.getElementById('found-errors').textContent=0; document.getElementById('total-errors').textContent=totalErrors; score=0; document.getElementById('score').textContent=0; displayText(lvl.text); updateStats(); }
+    function displayText(text) { const area=document.getElementById('typing-area'); area.innerHTML=''; let idxChar=0; text.split(/(\s+)/).forEach(seg=>{ const s=document.createElement('span'); s.textContent=seg; if(seg.trim()){ s.dataset.position=idxChar; s.style.cursor='pointer'; s.onclick=()=>checkWord(s);} area.appendChild(s); idxChar+=seg.length;}); const c=document.createElement('span'); c.classList.add('cursor'); area.appendChild(c); }
+    function checkWord(el) { if(isLevelComplete||isPaused) return; keySound.play().catch(()=>{}); const pos=+el.dataset.position; const found=gameData.english[currentLevel].errors.find(e=>e.position===pos); if(found&&!foundErrors.includes(found.position)) { foundErrors.push(found.position); el.classList.add('highlight'); setTimeout(()=>{ el.textContent=found.corrected; el.classList.replace('highlight','correct'); launchBalloons(); score+=10; updateStats(); if(foundErrors.length===totalErrors) levelComplete(); },300); } else { score=Math.max(0,score-5); updateStats(); el.classList.add('incorrect'); setTimeout(()=>el.classList.remove('incorrect'),800); }}
+    function hint() { if(isPaused) return; const unfound=gameData.english[currentLevel].errors.filter(e=>!foundErrors.includes(e.position)); if(!unfound.length){ alert('No typos left! 🎉'); return;} const h=unfound[0]; alert(`Hint: Look for the typo: "${h.original}" somewhere in the text.`); }
+    function toggleTheme() { document.body.classList.toggle('dark-theme'); }
+    function levelComplete() { isLevelComplete=true; stopTimer(); totalScore+=score; bellSound.play().catch(()=>{}); setTimeout(()=>alert(`Level Complete! 🎉\nFound ${totalErrors} typos in ${elapsedTime}s.`),500); }
+    function finishGame() { stopTimer(); const area=document.getElementById('typing-area'); area.innerHTML=`<div style="text-align:center;padding:20px;font-family:'Special Elite',cursive;"><h2 style="font-size:24px;">Game Complete!🎉</h2><p>Congrats ${playerName}!</p><p>Total Score: ${totalScore}</p></div>`; document.getElementById('check-btn').disabled=true; document.getElementById('next-btn').disabled=true; }
+    document.getElementById('start-btn').onclick=async()=>{ if(!gameData.english.length) await fetchDynamicTexts(); loadLevel(); startTimer(); generateBadge(); document.getElementById('start-btn').disabled=true; };
+    document.getElementById('pause-btn').onclick=()=>{ isPaused=!isPaused; document.getElementById('pause-btn').innerHTML=isPaused?'<i class="fas fa-play"></i> Resume':'<i class="fas fa-pause"></i> Pause'; };
+    document.getElementById('hint-btn').onclick=hint;
+    document.getElementById('theme-btn').onclick=toggleTheme;
+    document.getElementById('check-btn').onclick=()=>{ if(isPaused) return; keySound.play().catch(()=>{}); if(foundErrors.length===totalErrors){ alert('Perfect! All typos found! 🎉'); bellSound.play().catch(()=>{}); } else alert(`Found ${foundErrors.length}/${totalErrors}, keep going!`); };
+    document.getElementById('next-btn').onclick=()=>{ if(!isLevelComplete&&foundErrors.length<totalErrors){ alert('Find all typos first!'); return; } currentLevel++; loadLevel(); };
+    document.getElementById('restart-btn').onclick=()=>{ if(confirm('Restart game?')){ stopTimer(); currentLevel=0; totalScore=0; loadLevel(); generateBadge(); document.getElementById('start-btn').disabled=false; } };
+    function updateStats(){ document.getElementById('found-errors').textContent=foundErrors.length; document.getElementById('score').textContent=score; document.getElementById('accuracy').textContent= totalErrors?((foundErrors.length/totalErrors)*100).toFixed(0):100; }
+    function generateBadge(){ const titles=[`Typo Terminator, ${playerName}! 🔨`,`${playerName}, slice 'em like sushi! 🍣`,`All hail ${playerName}! 👑`,`Bravo, ${playerName}! 🏟️`,`Legend says ${playerName} feasts on typos! 🌅`]; document.getElementById('badge-area').textContent=titles[Math.floor(Math.random()*titles.length)]; }
+    window.onload=fetchDynamicTexts;
+  </script>
+</body>
+</html>
